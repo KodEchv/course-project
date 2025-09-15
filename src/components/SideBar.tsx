@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 export const SideBar = () => {
     return (
-        <div className="navSidebar min-w-54 bg-[#d9d9d9] flex flex-col items-center">
+        <div className="navSidebar min-w-40 max-h-full bg-[#d9d9d9] flex flex-col items-center">
             <div className="mt-10 mb-6 group relative flex flex-col items-center">
                 <Link to="/estudiante">
                     <User size={60} className="m-3" />

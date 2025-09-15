@@ -10,18 +10,19 @@ function App() {
 
   return (
     <>
-      <div className='flex flex-col items-center justify-center h-screen bg-[#0D1B2A]'>
+      <div className='h-screen w-screen bg-[#0D1B2A]'>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<MainView />} />
-            <Route path="modulos" element={<ModulesView/>}/>
+            <Route path="modulos" element={<ModulesView />} />
             <Route path="progreso" element={<ProgressView />} />
-            <Route path='estudiante' element={<StudentsView/>}/>
+            <Route path='estudiante' element={<StudentsView />} />
             <Route path="contenido" element={<ContentView />} />
             <Route path="*" element={<MainView />} />
           </Routes>
         </BrowserRouter>
       </div>
+
     </>
   )
 }

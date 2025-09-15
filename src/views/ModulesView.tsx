@@ -5,29 +5,39 @@ import { Link } from "react-router-dom"
 
 export const ModulesView = () => {
     return (
-        <div className="w-full h-screen flex">
+        <div className="flex h-screen w-screen bg-[#0D1B2A] overflow-hidden">
+            {/* Sidebar fijo */}
             <SideBar />
-            <div className="contentArea w-full">
-                <h2 className="text-6xl font-bold text-left mt-10 text-[#d9d9d9] p-4 pl-20">MÓDULOS</h2>
-                <div className="modulosContainer w-full h-3/4 flex flex-col items-center justify-center">
-                    <div className="w-full overflow-x-auto flex justify-center">
-                        <div className="grid grid-rows-2 grid-flow-col gap-15 px-4 w-max">
-                            <Link to={"/contenido"}>
-                                <ModuleCard moduleName="Modulo 1" />
-                            </Link>
-                            <ModuleCard moduleName="Modulo 1"/>
-                            <ModuleCard moduleName="Modulo 1"/>
-                            <ModuleCard moduleName="Modulo 1"/>
-                            <ModuleCard moduleName="Modulo 1"/>
-                            <ModuleCard moduleName="Modulo 1"/>
-                            <ModuleCard moduleName="Modulo 1"/>
-                            <ModuleCard moduleName="Modulo 1"/>
-                        </div>
+
+            {/* Área de contenido */}
+            <div className="flex flex-col flex-1">
+                {/* Título */}
+                <div className="h-[10%] flex items-center p-4 md:pl-20">
+                    <h2 className="text-4xl font-bold text-[#d9d9d9]">
+                        MÓDULOS
+                    </h2>
+                </div>
+
+                {/* Grid central (2 filas × 4 columnas) */}
+                <div className="flex-1 px-8 md:px-20 pb-8">
+                    <div className="grid grid-cols-4 grid-rows-2 gap-4 h-full w-full">
+                        <Link to={"/contenido"}>
+                            <ModuleCard moduleName="Modulo 1" />
+                        </Link>
+                        <ModuleCard moduleName="Modulo 2" />
+                        <ModuleCard moduleName="Modulo 3" />
+                        <ModuleCard moduleName="Modulo 4" />
+                        <ModuleCard moduleName="Modulo 5" />
+                        <ModuleCard moduleName="Modulo 6" />
+                        <ModuleCard moduleName="Modulo 7" />
+                        <ModuleCard moduleName="Modulo 8" />
                     </div>
                 </div>
-                <div className="arrowContainer w-full h-25 flex items-center justify-between text-[#d9d9d9] px-40 hover:cursor-pointer">
-                    <CircleArrowLeft size={60} className="m-3" />
-                    <CircleArrowRight size={60} className="m-3" />
+
+                {/* Flechas */}
+                <div className="h-[10%] w-full flex items-center justify-between text-[#d9d9d9] px-10">
+                    <CircleArrowLeft size={40} className="cursor-pointer hover:scale-110 transition" />
+                    <CircleArrowRight size={40} className="cursor-pointer hover:scale-110 transition" />
                 </div>
             </div>
         </div>
