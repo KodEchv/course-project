@@ -1,7 +1,7 @@
 
 import { Plus, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getUsers, createPersona, createUsuario } from '../services/userService';
+import { getUsers, createPersona, createUsuario, deleteUser } from '../services/userService';
 import { Link } from "react-router-dom";
 import { UserForm } from "./UserForm";
 
@@ -24,6 +24,12 @@ export const Login = () => {
             })
             .catch(() => setUsuarios([]));
     }, [success]);
+
+    const handleDeleteUser = (id: string) => {
+        deleteUser(id)
+            .then(() => setSuccess('Usuario eliminado correctamente'))
+            .catch(() => setSuccess('Error al eliminar el usuario'));
+    }
 
     // El formulario ahora está en UserForm
 
@@ -51,7 +57,7 @@ export const Login = () => {
                                     {usuario.name}
                                 </button>
                             </Link>
-                            <button className="text-[#2e2e2e] text-bold hover:text-red-500 hover:cursor-pointer transition-colors">
+                            <button className="text-[#2e2e2e] text-bold hover:text-red-500 hover:cursor-pointer transition-colors" onClick={() => handleDeleteUser(usuario.id)}>
                                 <Trash size={20}/>
                             </button>
                         </div>)

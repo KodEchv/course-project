@@ -49,3 +49,19 @@ export async function getUsers(): Promise<User[]> {
   }
   return response.json();
 }
+
+export async function deleteUser(id: string): Promise<void> {
+  const response = await fetch(`${API_URL}/usuarios/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) {
+    throw new Error('No se pudo eliminar el usuario');
+  }
+
+  const response2 = await fetch(`${API_URL}/personas/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response2.ok) {
+    throw new Error('No se pudo eliminar la persona asociada');
+  }
+}
