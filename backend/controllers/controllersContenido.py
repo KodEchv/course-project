@@ -1,4 +1,5 @@
-from fastapi import Depends, HTTPException
+import json
+from fastapi import Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from models.models import Contenido
 from services import crud
@@ -14,9 +15,17 @@ def get_contenido_controller(contenido_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Contenido no encontrado")
     return contenido
 
-def create_contenido_controller(contenido_data: dict, db: Session = Depends(get_db)):
-    contenido = Contenido(**contenido_data)
-    return crud.create_contenido(db, contenido)
+def get_contenidosByModulos_controller(modulo_id: int, submodulo_id: int, db: Session = Depends(get_db)):
+    contenido = crud.get_contenido_by_modulo_submodulo(db, modulo_id, submodulo_id)
+    if not contenido:
+        raise HTTPException(status_code=404, detail="Contenido no encontrado")
+    return contenido
+
+def create_contenido_controller(modulo_data: dict, archivo: UploadFile | None, db: Session):
+    contenido = crud.create_contenido(db, modulo_data, archivo)
+    if not contenido:
+        raise HTTPException(status_code=400, detail="Error al crear el Contenido")
+    return contenido
 
 def delete_contenido_controller(contenido_id: int, db: Session = Depends(get_db)):
     contenido = crud.delete_contenido(db, contenido_id)

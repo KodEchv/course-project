@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react"
 import { moduleListService, submoduleListService } from "../services/listService"
 
-export const AddContentForm = () => {
+export const AddContentForm = ({ setIsUpdated }: { setIsUpdated: () => void }) => {
 
     const [modulos, setModulos] = useState<{ [key: number]: string }>({})
     const [submodulos, setSubmodulos] = useState<{ [key: number]: string }>({})
-    const [idModulo, setIdModulo] = useState<number | null>(null);
 
     const [formData, setFormData] = useState({
         modulo: "",
@@ -19,22 +18,21 @@ export const AddContentForm = () => {
     useEffect(() => {
         const fetchModulos = async () => {
             const modulosList = await moduleListService()
-            setModulos(modulosList);
+            setModulos(modulosList)
         }
-        fetchModulos();
-
+        fetchModulos()
     }, [])
 
     useEffect(() => {
         const fetchSubmodulos = async () => {
             if (formData.modulo) {
                 const submodulosList = await submoduleListService(Number(formData.modulo))
-                setSubmodulos(submodulosList);
+                setSubmodulos(submodulosList)
             } else {
-                setSubmodulos({});
+                setSubmodulos({})
             }
         }
-        fetchSubmodulos();
+        fetchSubmodulos()
     }, [formData.modulo])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -58,20 +56,53 @@ export const AddContentForm = () => {
         })
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        const output = {
-            ...formData,
-            archivo: formData.archivo ? formData.archivo.name : null,
+        const contenidoData = {
+            Tipo: formData.tipo,
+            RutaContenido: "",
+            Posicion: Number(formData.posicion),
+            ID_SubModuloPertenece: Number(formData.submodulo),
         }
 
-        console.log("✅ Contenido agregado:", output)
-        resetForm()
+        const form = new FormData()
+
+        form.append("ID_SubModuloPertenece", String(contenidoData.ID_SubModuloPertenece))
+        form.append("Tipo", contenidoData.Tipo)
+        form.append("RutaContenido", contenidoData.RutaContenido)
+        form.append("Posicion", String(contenidoData.Posicion))
+
+        // 🔥 Si es texto o título → generar archivo .txt automáticamente
+        if (formData.tipo === "texto" || formData.tipo === "titulo") {
+            const blob = new Blob([formData.contenido], { type: "text/plain" })
+            const file = new File([blob], "contenido.txt", { type: "text/plain" })
+            form.append("archivo", file)
+        } else if (formData.archivo) {
+            // video o imagen
+            form.append("archivo", formData.archivo)
+        }
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/contenidos`, {
+                method: "POST",
+                body: form
+            })
+
+            const data = await response.json()
+            console.log("Servidor respondió:", data)
+
+            setIsUpdated()
+            resetForm()
+
+        } catch (error) {
+            console.error("Error enviando contenido:", error)
+        }
     }
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
             <label className="flex flex-col">
                 <span className="font-semibold py-2">Módulo</span>
                 <select
@@ -81,11 +112,9 @@ export const AddContentForm = () => {
                     required
                     className="p-2 rounded-lg bg-[#EFEFEF]"
                 >
-                    <option value="" disabled >Selecciona un módulo</option>
+                    <option value="" disabled>Selecciona un módulo</option>
                     {Object.entries(modulos).map(([id, nombre]) => (
-                        <option key={id} value={id}>
-                            {nombre}
-                        </option>
+                        <option key={id} value={id}>{nombre}</option>
                     ))}
                 </select>
             </label>
@@ -102,9 +131,7 @@ export const AddContentForm = () => {
                 >
                     <option value="" disabled>Selecciona un submódulo</option>
                     {Object.entries(submodulos).map(([id, nombre]) => (
-                        <option key={id} value={id}>
-                            {nombre}
-                        </option>
+                        <option key={id} value={id}>{nombre}</option>
                     ))}
                 </select>
             </label>
@@ -125,7 +152,6 @@ export const AddContentForm = () => {
                 </select>
             </label>
 
-            {/* Campo dinámico según tipo */}
             {(formData.tipo === "texto" || formData.tipo === "titulo") ? (
                 <label className="flex flex-col">
                     <span className="font-semibold py-2">
@@ -167,6 +193,7 @@ export const AddContentForm = () => {
             <button type="submit" className="bg-[#0D1B2A] text-white py-2 rounded-lg font-semibold">
                 Agregar Contenido
             </button>
+
         </form>
     )
 }

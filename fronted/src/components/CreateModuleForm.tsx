@@ -3,7 +3,7 @@ import { useState } from "react"
 const API_URL = import.meta.env.VITE_API_URL;
 
 
-export const CreateModuleForm = () => {
+export const CreateModuleForm = ({ setIsUpdated }: { setIsUpdated: () => void }) => {
     const [formData, setFormData] = useState({
         nombre: "",
         descripcion: "",
@@ -66,7 +66,7 @@ export const CreateModuleForm = () => {
 
             const result = await res.json();
             console.log("✅ Módulo creado:", result);
-            
+            setIsUpdated();
             alert("Módulo creado exitosamente.");
         } catch (error) {
 

@@ -38,7 +38,7 @@ function App() {
                 <StudentsView />
               </ProtectedRoute>
             } />
-            <Route path="contenido" element={
+            <Route path="contenido/:name/:id" element={
               <ProtectedRoute>
                 <ContentView />
               </ProtectedRoute>

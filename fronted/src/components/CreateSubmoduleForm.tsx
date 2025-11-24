@@ -3,7 +3,7 @@ import { moduleListService } from "../services/listService";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const CreateSubmoduleForm = () => {
+export const CreateSubmoduleForm = ({ setIsUpdated }: { setIsUpdated: () => void }) => {
 
     const [modulos, setModulos] = useState<{ [key: number]: string }>({})
 
@@ -70,7 +70,7 @@ export const CreateSubmoduleForm = () => {
                 return;
             }
 
-            alert("Submódulo creado exitosamente.");
+            setIsUpdated();
         } catch (error) {
             console.error("Error al crear el submódulo:", error)
             alert("No se pudo conectar con el servidor.");

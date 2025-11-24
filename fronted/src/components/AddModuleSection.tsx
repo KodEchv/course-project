@@ -3,7 +3,7 @@ import { CreateModuleForm } from "./CreateModuleForm"
 import { CreateSubmoduleForm } from "./CreateSubmoduleForm"
 import { AddContentForm } from "./AddContentForm"
 
-export const AddModuleSection = () => {
+export const AddModuleSection = ({ setIsUpdated }: { setIsUpdated: () => void }) => {
     const [activeTab, setActiveTab] = useState("modulo")
 
     return (
@@ -41,9 +41,9 @@ export const AddModuleSection = () => {
 
             {/* Contenido dinámico */}
             <div className="flex-1 overflow-y-auto">
-                {activeTab === "modulo" && <CreateModuleForm />}
-                {activeTab === "submodulo" && <CreateSubmoduleForm />}
-                {activeTab === "contenido" && <AddContentForm />}
+                {activeTab === "modulo" && <CreateModuleForm setIsUpdated={setIsUpdated} />}
+                {activeTab === "submodulo" && <CreateSubmoduleForm setIsUpdated={setIsUpdated} />}
+                {activeTab === "contenido" && <AddContentForm setIsUpdated={setIsUpdated} />}
             </div>
         </div>
     )

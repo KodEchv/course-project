@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from controllers import controllers
 from models.schemas import ContenidoCreate, ContenidoUpdate
@@ -14,9 +14,29 @@ def get_contenidos(db: Session = Depends(get_db)):
 def get_contenido(contenido_id: int, db: Session = Depends(get_db)):
     return controllers.get_contenido_controller(contenido_id, db)
 
+@routerContenidos.get("/contenidos/{modulo_id}/{submodulo_id}", summary="Obtener contenido", description="Obtiene los datos de un contenido por su ID")
+def get_contenido(modulo_id: int, submodulo_id: int, db: Session = Depends(get_db)):
+    return controllers.get_contenidosByModulos_controller(modulo_id, submodulo_id, db)
+
 @routerContenidos.post("/contenidos", summary="Crear contenido", description="Crea un nuevo contenido en el sistema")
-def create_contenido(contenido: ContenidoCreate, db: Session = Depends(get_db)):
-    return controllers.create_contenido_controller(contenido.dict(), db)
+async def create_contenido(
+    ID_SubModuloPertenece: int = Form(...),
+    Tipo: str = Form(...),
+    RutaContenido: str = Form(...),
+    Posicion: int = Form(...),
+    archivo: UploadFile | None = File(None),
+    db: Session = Depends(get_db)
+):
+    return controllers.create_contenido_controller(
+        {
+            "ID_SubModuloPertenece": ID_SubModuloPertenece,
+            "Tipo": Tipo,
+            "RutaContenido": RutaContenido,
+            "Posicion": Posicion,
+        },
+        archivo,
+        db
+    )
 
 @routerContenidos.delete("/contenidos/{contenido_id}", summary="Eliminar contenido", description="Elimina un contenido por su ID")
 def delete_contenido(contenido_id: int, db: Session = Depends(get_db)):

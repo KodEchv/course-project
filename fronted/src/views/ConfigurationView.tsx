@@ -1,8 +1,17 @@
+import { useState } from "react"
 import { AddModuleSection } from "../components/AddModuleSection"
 import { ModuleSkeleton } from "../components/ModuleSkeleton"
 import { SideBar } from "../components/SideBar"
 
 export const ConfigurationView = () => {
+
+    const [isUpdated, setIsUpdated] = useState(false)
+
+    const setIsUpdatedHandler = () => {
+        setIsUpdated(!isUpdated);
+        console.log("isUpdated set to:", !isUpdated);
+    }
+
     return (
         <div className="flex h-screen w-screen bg-[#0D1B2A] overflow-hidden">
             <SideBar />
@@ -22,12 +31,12 @@ export const ConfigurationView = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
                         {/* Columna izquierda - Agregar módulo */}
                         <div className="bg-[#D9D9D9] rounded-2xl shadow-lg flex items-center justify-center text-[#0D1B2A] font-semibold text-xl">
-                            <AddModuleSection />
+                            <AddModuleSection setIsUpdated={setIsUpdatedHandler} />
                         </div>
 
                         {/* Columna derecha - Esqueleto de módulos */}
                         <div className=" rounded-2xl shadow-lg flex justify-center text-[#0D1B2A] font-semibold text-xl">
-                            <ModuleSkeleton />
+                            <ModuleSkeleton isUpdated={isUpdated} />
                         </div>
                     </div>
                 </div>
