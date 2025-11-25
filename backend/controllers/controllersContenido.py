@@ -15,8 +15,8 @@ def get_contenido_controller(contenido_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Contenido no encontrado")
     return contenido
 
-def get_contenidosByModulos_controller(modulo_id: int, submodulo_id: int, db: Session = Depends(get_db)):
-    contenido = crud.get_contenido_by_modulo_submodulo(db, modulo_id, submodulo_id)
+def get_contenidosByModulos_controller(submodulo_id: int, db: Session = Depends(get_db)):
+    contenido = crud.get_contenido_by_modulo_submodulo(db, submodulo_id)
     if not contenido:
         raise HTTPException(status_code=404, detail="Contenido no encontrado")
     return contenido

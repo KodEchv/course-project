@@ -14,9 +14,9 @@ def get_contenidos(db: Session = Depends(get_db)):
 def get_contenido(contenido_id: int, db: Session = Depends(get_db)):
     return controllers.get_contenido_controller(contenido_id, db)
 
-@routerContenidos.get("/contenidos/{modulo_id}/{submodulo_id}", summary="Obtener contenido", description="Obtiene los datos de un contenido por su ID")
-def get_contenido(modulo_id: int, submodulo_id: int, db: Session = Depends(get_db)):
-    return controllers.get_contenidosByModulos_controller(modulo_id, submodulo_id, db)
+@routerContenidos.get("/contenidos/submodulo/{submodulo_id}", summary="Obtener contenido", description="Obtiene los datos de un contenido por su ID")
+def get_contenido(submodulo_id: int, db: Session = Depends(get_db)):
+    return controllers.get_contenidosByModulos_controller(submodulo_id, db)
 
 @routerContenidos.post("/contenidos", summary="Crear contenido", description="Crea un nuevo contenido en el sistema")
 async def create_contenido(

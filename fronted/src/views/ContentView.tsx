@@ -11,34 +11,37 @@ const submodules = [
 ];
 const API_URL = import.meta.env.VITE_API_URL;
 export const ContentView = () => {
-  const [contenidos, setContenidos] = useState<Array<{ tipo: string; ruta: string; posicion: number }>>([]);
+  const [contenidos, setContenidos] = useState<Array<{Tipo: string; RutaContenido: string; Posicion: number}>>([]);
   const [moduloSelectedID, setModuloSelectedID] = useState<string | null>(null);
   const [submoduloSelectedID, setSubmoduloSelectedID] = useState<string | null>(null);
   const [titulo, setTitulo] = useState<string | null>(null);
+
   useEffect(() => {
     const urlParams = window.location.pathname.split("/");
-    const moduloID = urlParams[3];
-    setModuloSelectedID(moduloID);
+    //const moduloID = urlParams[3];
+    //setModuloSelectedID(moduloID);
     const titulo = decodeURI(urlParams[2]);
     setTitulo(titulo);
 
-    console.log("Modulo ID:", titulo);
-    //const submoduloID = urlParams[4];
-    setSubmoduloSelectedID("1"); // Temporalmente fijo
+    const submoduloID = urlParams[3];
+    setSubmoduloSelectedID(submoduloID);
 
     const fetchContenidos = async () => {
       try {
-        if (!moduloSelectedID || !submoduloSelectedID) return;
+        if (!submoduloSelectedID) return;
+        const response = await fetch(`${API_URL}/contenidos/submodulo/${submoduloSelectedID}`);
+        const data = await response.json();
+        setContenidos(data);
       } catch (error) {
-        console.error("Error al obtener los IDs de módulo y submódulo:", error);
+        console.error("Error al obtener los contenidos:", error);
+        setContenidos([]);
       }
-      const response = await fetch(`${API_URL}/contenidos/${moduloSelectedID}/${submoduloSelectedID}`);
-      const data = await response.json();
-      setContenidos(data);
     };
     fetchContenidos();
-    
-  }, []);
+
+  }, [moduloSelectedID, submoduloSelectedID]);
+
+
   return (
     <div className="w-full h-full flex flex-col p-4">
       <ContentHeader modulo={titulo || "Título del Módulo"} />
