@@ -10,9 +10,11 @@ def get_contenido(db: Session, contenido_id: int):
     return db.query(Contenido).filter(Contenido.ID_Contenido == contenido_id).first()
 
 def get_contenido_by_modulo_submodulo(db: Session, submodulo_id: int):
-    return db.query(Contenido).filter(
+    contenido = db.query(Contenido).filter(
         Contenido.ID_SubModuloPertenece == submodulo_id
     ).all()
+
+    return contenido if contenido else []
 
 def create_contenido(db: Session, contenido_data: dict, archivo):
 

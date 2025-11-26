@@ -18,7 +18,8 @@ def get_contenido_controller(contenido_id: int, db: Session = Depends(get_db)):
 def get_contenidosByModulos_controller(submodulo_id: int, db: Session = Depends(get_db)):
     contenido = crud.get_contenido_by_modulo_submodulo(db, submodulo_id)
     if not contenido:
-        raise HTTPException(status_code=404, detail="Contenido no encontrado")
+        #raise HTTPException(status_code=404, detail="Contenido no encontrado")
+        return []
     return contenido
 
 def create_contenido_controller(modulo_data: dict, archivo: UploadFile | None, db: Session):

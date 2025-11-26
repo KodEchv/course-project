@@ -25,7 +25,7 @@ export const VideoContent = ({ src, title }: { src: string; title: string }) => 
                 src={embedSrc}
                 title={title}
                 className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="fullscreen; picture-in-picture"
                 allowFullScreen
               />
             </div>

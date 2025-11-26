@@ -11,7 +11,7 @@ const DEFAULT_IMAGE = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSH6
 export const ModuleCard = ({id, imageUrl, moduleName }: ModuleCardProps) => {
     return (
         <Link
-            to={`/contenido/${moduleName}/${id}`}
+            to={`/contenido/${moduleName}/${id}/0`}
             className="w-full h-full rounded-xl bg-[#d9d9d9] flex flex-col p-2 shadow-md"
         >
             {/* Imagen proporcional */}

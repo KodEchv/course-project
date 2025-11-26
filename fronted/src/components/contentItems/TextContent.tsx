@@ -8,8 +8,6 @@ export const TextContent = ({ruta}: {ruta:string}) => {
       const res = await fetch(ruta);
       const txt = await res.text();
       setTexto(txt);
-
-      console.log("Texto cargado:", txt);
     };
     loadText();
   }, [ruta]);

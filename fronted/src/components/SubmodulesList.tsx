@@ -24,9 +24,6 @@ export const SubmodulesList = ({
       </>
     );
   }
-
-  console.log("Rendering SubmodulesList with submodules:", submodules, "selectedId:", selectedId);
-
   return (
     <div className="bg-[#d9d9d9] rounded-2xl p-6 w-80 min-w-64 max-h-200 flex flex-col gap-4 overflow-y-auto">
       <h2 className="text-2xl font-normal mb-2">Lista submódulos</h2>

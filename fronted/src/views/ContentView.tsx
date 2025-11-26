@@ -17,6 +17,8 @@ export const ContentView = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+
+  const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [selectedSubmodule, setSelectedSubmodule] = useState<string | null>(null);
   const [submodules, setSubmodules] = useState<{ id: string; title: string }[]>([]);
 
@@ -26,17 +28,17 @@ export const ContentView = () => {
     setTitulo(tituloFromPath || null);
 
     const third = urlParams[3] || null;
+    const fourth = urlParams[4] || null;
 
-    // si third es numérico o parece id de modulo (viene desde ModuleCard con id de modulo),
-    // pedimos la lista de submodulos de ese modulo y redirigimos al primero.
-    if (third) {
-      // intentamos obtener submódulos para 'third' como idModulo
+    setSelectedModule(third);
+    setSelectedSubmodule(fourth);
+
+    if (third  && fourth) {
       (async () => {
         try {
           const res = await fetch(`${API_URL}/submodulos/list-names/${third}`);
           if (res.ok) {
             const raw = await res.json();
-            // si el backend devuelve un objeto { id: title, ... }, convertimos a array [{id,title}]
             let list: { id: string; title: string }[] = [];
             if (raw && !Array.isArray(raw) && typeof raw === "object") {
               list = Object.entries(raw).map(([k, v]) => ({ id: String(k), title: String(v) }));
@@ -47,16 +49,14 @@ export const ContentView = () => {
             list.sort((a, b) => Number(a.id) - Number(b.id));
             setSubmodules(list);
 
-            if (list.length > 0) {
-              navigate(`/contenido/${list[0]?.title}/${list[0]?.id}`);
+            if (fourth === "0") {
+              navigate(`/contenido/${list[0]?.title}/${third}/${list[0]?.id}`);
             }
           }
         } catch (e) {
           console.warn("No se pudieron cargar submódulos:", e);
         }
 
-        // si no hay submódulos o falla, tratamos 'third' como id de submódulo directamente
-        setSelectedSubmodule(third);
       })();
     } else {
       setSelectedSubmodule(null);
@@ -82,9 +82,7 @@ export const ContentView = () => {
   }, [selectedSubmodule]);
 
   const handleSelectSubmodule = (id: string, submoduloName: string) => {
-    //const path = `${import.meta.env.VITE_DOMININIO}/contenido/${submoduloName}/${id}`;
-    const path = `/contenido/${encodeURIComponent(submoduloName)}/${id}${location.search || ""}${location.hash || ""}`;
-    console.log("Navigating to:", path);
+    const path = `/contenido/${encodeURIComponent(submoduloName)}/${selectedModule}/${id}${location.search || ""}${location.hash || ""}`;
     navigate(path, { replace: false });
   };
 

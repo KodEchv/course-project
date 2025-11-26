@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { getUsers } from '../services/userService';
-import StatCard from '../components/StatCard';
-import Bar from '../components/Bar';
-import { SideBar } from '../components/SideBar';
+import { useEffect, useState, useMemo } from "react";
+import { SideBar } from "../components/SideBar";
+import StatCard from "../components/StatCard";
+import Bar from "../components/Bar";
+import { getUsers } from "../services/userService";
 
 export const DashboardView = () => {
     const [avances, setAvances] = useState<any[]>([]);
@@ -10,130 +10,169 @@ export const DashboardView = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    /*useEffect(() => {
+    // ---------------------
+    // Cargar datos desde API
+    // ---------------------
+    useEffect(() => {
         setLoading(true);
+
         Promise.all([
-            fetch(import.meta.env.VITE_API_URL + '/avances').then(res => {
-                if (!res.ok) throw new Error('Error al obtener avances');
+            fetch(import.meta.env.VITE_API_URL + "/avances").then(res => {
+                if (!res.ok) throw new Error("Error al obtener avances");
                 return res.json();
             }),
             getUsers()
         ])
-        .then(([avancesData, usuariosData]) => {
-            setAvances(avancesData);
-            setUsuarios(usuariosData);
-        })
-        .catch(() => setError('No se pudieron cargar los datos'))
-        .finally(() => setLoading(false));
-    }, []);*/
-
-    // --- DATOS ESTÁTICOS DE EJEMPLO ---
-    // Para usar datos estáticos, descomenta las siguientes líneas y comenta el useEffect de la API:
-    
-    useEffect(() => {
-        const avancesEjemplo = [
-            { ID_User: 1, ID_Modulo: 1, ID_SubModulo: 1, Estado: 'finalizado', FechaInicio: '2025-09-01', FechaFin: '2025-09-10', PorcentajeAvance: 100 },
-            { ID_User: 2, ID_Modulo: 1, ID_SubModulo: 2, Estado: 'en progreso', FechaInicio: '2025-09-05', FechaFin: '', PorcentajeAvance: 60 },
-            { ID_User: 3, ID_Modulo: 2, ID_SubModulo: 1, Estado: 'finalizado', FechaInicio: '2025-09-02', FechaFin: '2025-09-12', PorcentajeAvance: 100 },
-            { ID_User: 4, ID_Modulo: 2, ID_SubModulo: 2, Estado: 'en progreso', FechaInicio: '2025-09-07', FechaFin: '', PorcentajeAvance: 40 },
-            { ID_User: 1, ID_Modulo: 2, ID_SubModulo: 3, Estado: 'finalizado', FechaInicio: '2025-09-10', FechaFin: '2025-09-20', PorcentajeAvance: 100 },
-            { ID_User: 2, ID_Modulo: 3, ID_SubModulo: 1, Estado: 'en progreso', FechaInicio: '2025-09-15', FechaFin: '', PorcentajeAvance: 20 },
-        ];
-        const usuariosEjemplo = [
-            { id: 1, name: 'Ana', rol: 'user' },
-            { id: 2, name: 'Luis', rol: 'user' },
-            { id: 3, name: 'Carlos', rol: 'user' },
-            { id: 4, name: 'Sofía', rol: 'user' },
-        ];
-        setAvances(avancesEjemplo);
-        setUsuarios(usuariosEjemplo);
-        setLoading(false);
+            .then(([avancesData, usuariosData]) => {
+                setAvances(avancesData);
+                setUsuarios(usuariosData);
+            })
+            .catch(() => setError("No se pudieron cargar los datos"))
+            .finally(() => setLoading(false));
     }, []);
-    
-    // --- FIN DATOS ESTÁTICOS ---
 
-    // Estadísticas
-    const totalUsuarios = usuarios.length;
-    const modulos = avances.reduce((acc, a) => acc.add(a.ID_Modulo), new Set());
-    const totalModulos = modulos.size;
-    const finalizados = avances.filter(a => a.Estado === 'finalizado').length;
-    // Cambiar usuariosPorModulo a Record<string, number> para evitar errores de tipo
-    // Usuarios por módulo: usuarios que están actualmente en progreso en cada módulo (no finalizados)
-    const usuariosPorModulo: Record<string, Set<number>> = {};
-    avances.forEach(a => {
-        if (a.Estado !== 'finalizado') {
-            const key = String(a.ID_Modulo);
-            if (!usuariosPorModulo[key]) usuariosPorModulo[key] = new Set();
-            usuariosPorModulo[key].add(a.ID_User);
-        }
-    });
-    // Para mostrar el número de usuarios por módulo
-    const usuariosPorModuloCount: Record<string, number> = {};
-    Object.entries(usuariosPorModulo).forEach(([mod, set]) => {
-        usuariosPorModuloCount[mod] = set.size;
-    });
+    // ---------------------
+    // MÉTRICAS DEL DASHBOARD
+    // ---------------------
+
+    const totalUsuarios = usuarios.length - 1; // excluir admin
+
+    const modulosSet = useMemo(
+        () => new Set(avances.map(a => a.ID_Modulo)),
+        [avances]
+    );
+    const totalModulos = modulosSet.size;
+
+    const finalizados = avances.filter(a => a.Estado === "finalizado").length;
+
+    // Usuarios en progreso por módulo
+    const usuariosPorModulo = useMemo(() => {
+        const map: Record<string, Set<number>> = {};
+
+        avances.forEach(a => {
+            if (a.Estado !== "finalizado") {
+                const key = String(a.ID_Modulo);
+                if (!map[key]) map[key] = new Set();
+                map[key].add(a.ID_User);
+            }
+        });
+
+        return map;
+    }, [avances]);
+
+    const usuariosPorModuloCount = Object.fromEntries(
+        Object.entries(usuariosPorModulo).map(([mod, users]) => [mod, users.size])
+    );
+
     const maxUsuariosModulo = Math.max(...Object.values(usuariosPorModuloCount), 1);
-    // Avances por estado para gráfico
-    const estados = ['finalizado', 'en progreso'];
-    const avancesPorEstado = estados.map(e => avances.filter(a => a.Estado === e).length);
-    // Avances por módulo para gráfico
-    const modulosArr = Array.from(modulos).map(String);
-    const avancesPorModulo = modulosArr.map(m => avances.filter(a => String(a.ID_Modulo) === m).length);
-    // Promedio de demora (días)
-    const promedioDemora = (() => {
-        const fechas = avances.filter(a => a.FechaInicio && a.FechaFin);
-        if (fechas.length === 0) return 0;
-        const sum = fechas.reduce((acc, a) => {
+
+    // Avances por estado
+    const estados = ["finalizado", "en progreso"];
+    const avancesPorEstado = estados.map(
+        estado => avances.filter(a => a.Estado === estado).length
+    );
+
+    // Avances por módulo
+    const modulosArr = Array.from(modulosSet).map(String);
+    const avancesPorModulo = modulosArr.map(
+        mod => avances.filter(a => String(a.ID_Modulo) === mod).length
+    );
+
+    // Promedio de demora
+    const promedioDemora = useMemo(() => {
+        const items = avances.filter(a => a.FechaInicio && a.FechaFin);
+        if (items.length === 0) return 0;
+
+        const total = items.reduce((acc, a) => {
             const ini = new Date(a.FechaInicio).getTime();
             const fin = new Date(a.FechaFin).getTime();
             return acc + (fin - ini);
         }, 0);
-        return Math.round(sum / fechas.length / (1000 * 60 * 60 * 24)); // días
-    })();
+
+        return Math.round(total / items.length / (1000 * 60 * 60 * 24));
+    }, [avances]);
+
+    // ---------------------
+    // UI
+    // ---------------------
 
     if (loading) return <div>Cargando...</div>;
     if (error) return <div>{error}</div>;
 
     return (
-        <div className="h-screen w-screen bg-[#0D1B2A] flex overflow-hidden instrument-sans">
+        <div className="h-screen w-screen bg-[#0D1B2A] flex overflow-hidden">
             <SideBar />
-            <div className="flex-1 flex flex-col items-center justify-start p-0 md:p-8 overflow-hidden">
-                <div className="bg-[#D9D9D9] rounded-none md:rounded-[50px] shadow-lg flex flex-col items-center w-full h-full max-w-full overflow-y-auto p-4 md:p-12">
-                    <h1 className="text-3xl md:text-4xl font-bold text-[#2e2e2e] mb-2 md:mb-4">Dashboard</h1>
-                    <p className="text-[#2e2e2e] text-base md:text-lg mb-4 md:mb-6 text-center">Bienvenido al panel de administración.</p>
-                    <div className="flex flex-wrap gap-4 md:gap-6 mb-6 md:mb-8 w-full justify-center">
+
+            <main className="flex-1 flex flex-col items-center p-4 md:p-10 overflow-y-auto">
+                <section className="bg-[#D9D9D9] rounded-[40px] shadow-lg w-full max-w-[1200px] p-6 md:p-12">
+
+                    {/* HEADER */}
+                    <header className="text-center mb-10">
+                        <h1 className="text-4xl font-bold text-[#2e2e2e]">Dashboard</h1>
+                        <p className="text-[#2e2e2e] mt-2">
+                            Panel general del progreso de usuarios y módulos.
+                        </p>
+                    </header>
+
+                    {/* TARJETAS DE ESTADÍSTICAS */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                         <StatCard title="Usuarios registrados" value={totalUsuarios} />
                         <StatCard title="Módulos distintos" value={totalModulos} />
                         <StatCard title="Avances finalizados" value={finalizados} />
-                        <StatCard title="Promedio de demora (días)" value={promedioDemora} />
+                        <StatCard title="Promedio demora (días)" value={promedioDemora} />
                     </div>
-                    <div className="w-full max-w-2xl mb-6 md:mb-8">
-                        <h2 className="text-lg md:text-xl font-bold text-[#2e2e2e] mb-2">Usuarios por módulo</h2>
-                        {Object.entries(usuariosPorModuloCount).length === 0 ? (
-                            <span className="text-[#2e2e2e]">No hay datos de módulos.</span>
+
+                    {/* USUARIOS POR MÓDULO */}
+                    <section className="mb-12">
+                        <h2 className="text-xl font-bold text-[#2e2e2e] mb-4">Usuarios por módulo</h2>
+
+                        {Object.keys(usuariosPorModuloCount).length === 0 ? (
+                            <p className="text-[#2e2e2e]">No hay datos disponibles.</p>
                         ) : (
-                            Object.entries(usuariosPorModuloCount).map(([mod, count]) => (
-                                <Bar key={mod} label={`Módulo ${mod}`} value={count} max={maxUsuariosModulo} />
+                            modulosArr.map(mod => (
+                                <Bar
+                                    key={mod}
+                                    label={`Módulo ${mod}`}
+                                    value={usuariosPorModuloCount[mod] || 0}
+                                    max={maxUsuariosModulo}
+                                    color="#3b82f6"
+                                />
                             ))
                         )}
-                    </div>
-                    {/* Gráficos simples con barras horizontales */}
-                    <div className="w-full max-w-2xl mb-6 md:mb-8 flex flex-col md:flex-row gap-8">
-                        <div className="flex-1">
-                            <h2 className="text-lg font-bold text-[#2e2e2e] mb-2">Avances por estado</h2>
+                    </section>
+
+                    {/* GRÁFICOS PRINCIPALES */}
+                    <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        {/* Avances por estado */}
+                        <div>
+                            <h2 className="text-xl font-bold text-[#2e2e2e] mb-4">Avances por estado</h2>
                             {estados.map((estado, i) => (
-                                <Bar key={estado} label={estado} value={avancesPorEstado[i]} max={Math.max(...avancesPorEstado, 1)} color={estado === 'finalizado' ? '#22c55e' : '#2563eb'} />
+                                <Bar
+                                    key={estado}
+                                    label={estado}
+                                    value={avancesPorEstado[i]}
+                                    max={Math.max(...avancesPorEstado, 1)}
+                                    color={estado === "finalizado" ? "#22c55e" : "#f97316"}
+                                />
                             ))}
                         </div>
-                        <div className="flex-1">
-                            <h2 className="text-lg font-bold text-[#2e2e2e] mb-2">Avances por módulo</h2>
+
+                        {/* Avances por módulo */}
+                        <div>
+                            <h2 className="text-xl font-bold text-[#2e2e2e] mb-4">Avances por módulo</h2>
                             {modulosArr.map((mod, i) => (
-                                <Bar key={mod} label={`Módulo ${mod}`} value={avancesPorModulo[i]} max={Math.max(...avancesPorModulo, 1)} color="#f59e42" />
+                                <Bar
+                                    key={mod}
+                                    label={`Módulo ${mod}`}
+                                    value={avancesPorModulo[i]}
+                                    max={Math.max(...avancesPorModulo, 1)}
+                                    color="#8b5cf6"
+                                />
                             ))}
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </section>
+                </section>
+            </main>
         </div>
     );
 };
