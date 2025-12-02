@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react"
 import { moduleListService, submoduleListService } from "../services/listService"
+import { getApiUrl } from "../config/api"
+
+const API_URL = getApiUrl();
 
 export const AddContentForm = ({ setIsUpdated }: { setIsUpdated: () => void }) => {
 
     const [modulos, setModulos] = useState<{ [key: number]: string }>({})
     const [submodulos, setSubmodulos] = useState<{ [key: number]: string }>({})
+    const [ocupiedPositions, setOcupiedPositions] = useState<number[]>([])
+    const [error, setError] = useState<string>("")
 
     const [formData, setFormData] = useState({
         modulo: "",
@@ -35,9 +40,42 @@ export const AddContentForm = ({ setIsUpdated }: { setIsUpdated: () => void }) =
         fetchSubmodulos()
     }, [formData.modulo])
 
+    // Cargar posiciones ocupadas cuando cambia el submodulo seleccionado
+    useEffect(() => {
+        const fetchOcupiedPositions = async () => {
+            if (!formData.submodulo) {
+                setOcupiedPositions([]);
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/contenidos`);
+                if (res.ok) {
+                    const contenidos = await res.json();
+                    const positions = contenidos
+                        .filter((c: any) => c.ID_SubModuloPertenece === Number(formData.submodulo))
+                        .map((c: any) => c.Posicion);
+                    setOcupiedPositions(positions);
+                }
+            } catch (error) {
+                console.error("Error cargando posiciones:", error);
+            }
+        };
+        fetchOcupiedPositions();
+    }, [formData.submodulo])
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
+
+        // Validar posición en tiempo real
+        if (name === "posicion") {
+            const pos = Number(value);
+            if (ocupiedPositions.includes(pos)) {
+                setError(`La posición ${pos} ya está ocupada en este submódulo`);
+            } else {
+                setError("");
+            }
+        }
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,15 +92,22 @@ export const AddContentForm = ({ setIsUpdated }: { setIsUpdated: () => void }) =
             archivo: null,
             posicion: "",
         })
+        setError("");
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        const pos = Number(formData.posicion);
+        if (ocupiedPositions.includes(pos)) {
+            alert(`La posición ${pos} ya está ocupada en este submódulo. Por favor elige otra.`);
+            return;
+        }
+
         const contenidoData = {
             Tipo: formData.tipo,
             RutaContenido: "",
-            Posicion: Number(formData.posicion),
+            Posicion: pos,
             ID_SubModuloPertenece: Number(formData.submodulo),
         }
 
@@ -84,7 +129,7 @@ export const AddContentForm = ({ setIsUpdated }: { setIsUpdated: () => void }) =
         }
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/contenidos`, {
+            const response = await fetch(`${API_URL}/contenidos`, {
                 method: "POST",
                 body: form
             })
@@ -188,6 +233,14 @@ export const AddContentForm = ({ setIsUpdated }: { setIsUpdated: () => void }) =
                     required
                     className="p-2 rounded-lg bg-[#EFEFEF]"
                 />
+                {error && (
+                    <span className="text-red-600 text-sm mt-1 font-semibold">{error}</span>
+                )}
+                {ocupiedPositions.length > 0 && (
+                    <span className="text-gray-600 text-xs mt-1">
+                        Posiciones ocupadas: {ocupiedPositions.sort((a, b) => a - b).join(", ")}
+                    </span>
+                )}
             </label>
 
             <button type="submit" className="bg-[#0D1B2A] text-white py-2 rounded-lg font-semibold">

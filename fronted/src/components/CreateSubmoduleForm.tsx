@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react"
-import { moduleListService } from "../services/listService";
+import { moduleListService, submoduleListService } from "../services/listService";
+import { getApiUrl } from "../config/api";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = getApiUrl();
 
 export const CreateSubmoduleForm = ({ setIsUpdated }: { setIsUpdated: () => void }) => {
 
     const [modulos, setModulos] = useState<{ [key: number]: string }>({})
+    const [ocupiedPositions, setOcupiedPositions] = useState<number[]>([])
+    const [error, setError] = useState<string>("")
 
     const [formData, setFormData] = useState({
         nombre: "",
@@ -16,19 +19,55 @@ export const CreateSubmoduleForm = ({ setIsUpdated }: { setIsUpdated: () => void
     })
 
     useEffect(() => {
-
         const fetchModulos = async () => {
             const modulosList = await moduleListService()
             setModulos(modulosList);
         }
-
         fetchModulos();
-
     }, [])
+
+    // Cargar posiciones ocupadas cuando cambia el módulo seleccionado
+    useEffect(() => {
+        const fetchOcupiedPositions = async () => {
+            if (!formData.modulo) {
+                setOcupiedPositions([]);
+                return;
+            }
+            try {
+                const submodulos = await submoduleListService(Number(formData.modulo));
+                // submodulos es un objeto {id: nombre}
+                const ids = Object.keys(submodulos).map(Number);
+                
+                // Obtener los detalles de cada submodulo para sus posiciones
+                const positions: number[] = [];
+                for (const id of ids) {
+                    const res = await fetch(`${API_URL}/submodulos/${id}`);
+                    if (res.ok) {
+                        const sub = await res.json();
+                        positions.push(sub.Posicion);
+                    }
+                }
+                setOcupiedPositions(positions);
+            } catch (error) {
+                console.error("Error cargando posiciones:", error);
+            }
+        };
+        fetchOcupiedPositions();
+    }, [formData.modulo])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
+
+        // Validar posición en tiempo real
+        if (name === "posicion") {
+            const pos = Number(value);
+            if (ocupiedPositions.includes(pos)) {
+                setError(`La posición ${pos} ya está ocupada en este módulo`);
+            } else {
+                setError("");
+            }
+        }
     }
 
     const resetForm = () => {
@@ -39,6 +78,7 @@ export const CreateSubmoduleForm = ({ setIsUpdated }: { setIsUpdated: () => void
             posicion: "",
             tipo: "contenido",
         });
+        setError("");
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -49,11 +89,17 @@ export const CreateSubmoduleForm = ({ setIsUpdated }: { setIsUpdated: () => void
             return;
         }
 
+        const pos = Number(formData.posicion);
+        if (ocupiedPositions.includes(pos)) {
+            alert(`La posición ${pos} ya está ocupada en este módulo. Por favor elige otra.`);
+            return;
+        }
+
         const data = new FormData();
         data.append("Nombre", formData.nombre);
         data.append("ID_ModuloPertenece", String(formData.modulo));
         data.append("Descripcion", formData.descripcion);
-        data.append("Posicion", String(formData.posicion));
+        data.append("Posicion", String(pos));
         data.append("Tipo", formData.tipo);
 
         console.log(data)
@@ -77,8 +123,6 @@ export const CreateSubmoduleForm = ({ setIsUpdated }: { setIsUpdated: () => void
         }
 
         resetForm();
-
-
     }
 
     return (
@@ -136,6 +180,14 @@ export const CreateSubmoduleForm = ({ setIsUpdated }: { setIsUpdated: () => void
                     required
                     className="p-2 rounded-lg bg-[#EFEFEF]"
                 />
+                {error && (
+                    <span className="text-red-600 text-sm mt-1 font-semibold">{error}</span>
+                )}
+                {ocupiedPositions.length > 0 && (
+                    <span className="text-gray-600 text-xs mt-1">
+                        Posiciones ocupadas: {ocupiedPositions.sort((a, b) => a - b).join(", ")}
+                    </span>
+                )}
             </label>
 
             <label className="flex flex-col">

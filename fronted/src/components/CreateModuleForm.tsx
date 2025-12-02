@@ -1,7 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getApiUrl } from "../config/api"
 
-const API_URL = import.meta.env.VITE_API_URL;
-
+const API_URL = getApiUrl();
 
 export const CreateModuleForm = ({ setIsUpdated }: { setIsUpdated: () => void }) => {
     const [formData, setFormData] = useState({
@@ -11,9 +11,37 @@ export const CreateModuleForm = ({ setIsUpdated }: { setIsUpdated: () => void })
         imagen: null as File | null,
     })
 
+    const [ocupiedPositions, setOcupiedPositions] = useState<number[]>([]);
+    const [error, setError] = useState<string>("");
+
+    // Cargar posiciones ocupadas
+    useEffect(() => {
+        const fetchOcupiedPositions = async () => {
+            try {
+                const res = await fetch(`${API_URL}/modulos`);
+                const modulos = await res.json();
+                const positions = modulos.map((m: any) => m.Posicion);
+                setOcupiedPositions(positions);
+            } catch (error) {
+                console.error("Error cargando posiciones:", error);
+            }
+        };
+        fetchOcupiedPositions();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
         setFormData({ ...formData, [name]: value })
+
+        // Validar posición en tiempo real
+        if (name === "posicion") {
+            const pos = Number(value);
+            if (ocupiedPositions.includes(pos)) {
+                setError(`La posición ${pos} ya está ocupada`);
+            } else {
+                setError("");
+            }
+        }
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,6 +56,7 @@ export const CreateModuleForm = ({ setIsUpdated }: { setIsUpdated: () => void })
             posicion: "",
             imagen: null,
         });
+        setError("");
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -44,10 +73,17 @@ export const CreateModuleForm = ({ setIsUpdated }: { setIsUpdated: () => void })
             return;
         }
 
+        // Validar posición
+        const pos = Number(formData.posicion);
+        if (ocupiedPositions.includes(pos)) {
+            alert(`La posición ${pos} ya está ocupada. Por favor elige otra.`);
+            return;
+        }
+
         const data = new FormData();
         data.append("nombre", formData.nombre);
         data.append("descripcion", formData.descripcion);
-        data.append("posicion", String(Number(formData.posicion))); 
+        data.append("posicion", String(pos)); 
         data.append("imagen", formData.imagen);
 
         try {
@@ -114,6 +150,14 @@ export const CreateModuleForm = ({ setIsUpdated }: { setIsUpdated: () => void })
                     required
                     className="p-2 rounded-lg bg-[#EFEFEF]"
                 />
+                {error && (
+                    <span className="text-red-600 text-sm mt-1 font-semibold">{error}</span>
+                )}
+                {ocupiedPositions.length > 0 && (
+                    <span className="text-gray-600 text-xs mt-1">
+                        Posiciones ocupadas: {ocupiedPositions.sort((a, b) => a - b).join(", ")}
+                    </span>
+                )}
             </label>
 
             <label className="flex flex-col">
