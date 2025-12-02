@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getApiUrl } from "../config/api";
 
 type Avance = {
   ID_Avance: number;
@@ -11,7 +12,7 @@ type Avance = {
   PorcentajeAvance?: number | null;
 };
 
-const API_URL = import.meta.env.VITE_API_URL || "";
+const API_URL = getApiUrl();
 
 // Muestra progreso por módulo, opcionalmente filtrado por userId
 export const ModulesProgress = ({ userId }: { userId?: string | number }) => {
