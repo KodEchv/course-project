@@ -4,6 +4,7 @@ import { TextContent } from "./contentItems/TextContent";
 import { TitleContent } from "./contentItems/TittleContent";
 import { VideoContent } from "./contentItems/VideoContent";
 import { ContentActions } from "./contentItems/ContentActions";
+import { getApiUrl } from "../config/api";
 
 type ContentBoxProps = {
   Tipo: string;
@@ -11,10 +12,32 @@ type ContentBoxProps = {
   Posicion: number;
 };
 
-const API_URL = import.meta.env.VITE_API_URL || "";
+type SubmoduleInfo = {
+  id: string;
+  title: string;
+  tipo: string;
+  posicion: number;
+};
 
-export const ContentBox = ({ contenidos }: { contenidos: ContentBoxProps[] }) => {
+const API_URL = getApiUrl();
+
+export const ContentBox = ({
+  contenidos,
+  currentSubmodule,
+  allSubmodules,
+  moduleId,
+  userId,
+  onNavigate,
+}: {
+  contenidos: ContentBoxProps[];
+  currentSubmodule?: SubmoduleInfo;
+  allSubmodules?: SubmoduleInfo[];
+  moduleId?: string | null;
+  userId?: string | number | null;
+  onNavigate?: (nextSubmoduleId: string) => void;
+}) => {
   const [contenidosOrdenados, setContenidosOrdenados] = useState<ContentBoxProps[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!contenidos) return;
@@ -25,6 +48,157 @@ export const ContentBox = ({ contenidos }: { contenidos: ContentBoxProps[] }) =>
       console.error("Error al ordenar contenidos:", error);
     }
   }, [contenidos]);
+
+  // Determinar tipo de botón a mostrar
+  const getActionType = (): "continuar" | "finalizar" | "calificar" | null => {
+    if (!currentSubmodule) return null;
+    
+    // Si el submodule es de tipo examen, mostrar calificar
+    if (currentSubmodule.tipo && currentSubmodule.tipo.toLowerCase().includes("examen")) {
+      return "calificar";
+    }
+
+    // Si es el último submodule, mostrar finalizar
+    const isLastSubmodule = allSubmodules && allSubmodules.length > 0 && 
+      currentSubmodule.posicion === Math.max(...allSubmodules.map(s => s.posicion));
+    
+    if (isLastSubmodule) return "finalizar";
+    
+    // Si no, mostrar continuar
+    return "continuar";
+  };
+
+  const handleContinue = async () => {
+    setLoading(true);
+    try {
+      // Guardar avance completado
+      if (userId && currentSubmodule && moduleId) {
+        const response = await fetch(`${API_URL}/avances`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ID_User: Number(userId),
+            ID_Modulo: Number(moduleId),
+            ID_SubModulo: Number(currentSubmodule.id),
+            Estado: "Completado",
+            PorcentajeAvance: 100,
+            FechaFin: new Date().toISOString(),
+          }),
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          console.error("Error guardando avance:", err);
+          alert("Error al guardar el avance: " + (err.detail || "Error desconocido"));
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Navegar al siguiente submodule
+      if (allSubmodules && currentSubmodule) {
+        const currentIndex = allSubmodules.findIndex(s => s.id === currentSubmodule.id);
+        if (currentIndex >= 0 && currentIndex < allSubmodules.length - 1) {
+          const nextSubmodule = allSubmodules[currentIndex + 1];
+          onNavigate?.(nextSubmodule.id);
+        }
+      }
+    } catch (error) {
+      console.error("Error al continuar:", error);
+      alert("Error de conexión: " + (error instanceof Error ? error.message : "Error desconocido"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinish = async () => {
+    setLoading(true);
+    try {
+      // Guardar avance completado
+      if (userId && currentSubmodule && moduleId) {
+        const response = await fetch(`${API_URL}/avances`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ID_User: Number(userId),
+            ID_Modulo: Number(moduleId),
+            ID_SubModulo: Number(currentSubmodule.id),
+            Estado: "Completado",
+            PorcentajeAvance: 100,
+            FechaFin: new Date().toISOString(),
+          }),
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          console.error("Error guardando avance:", err);
+          alert("Error al guardar el avance: " + (err.detail || "Error desconocido"));
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Redirigir a módulos
+      window.location.href = "/modulos";
+    } catch (error) {
+      console.error("Error al finalizar:", error);
+      alert("Error de conexión: " + (error instanceof Error ? error.message : "Error desconocido"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGrade = async (_password: string, ok: boolean) => {
+    if (!ok) {
+      console.error("Contraseña incorrecta");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Guardar examen como completado
+      if (userId && currentSubmodule && moduleId) {
+        const response = await fetch(`${API_URL}/avances`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ID_User: Number(userId),
+            ID_Modulo: Number(moduleId),
+            ID_SubModulo: Number(currentSubmodule.id),
+            Estado: "Completado",
+            PorcentajeAvance: 100,
+            FechaFin: new Date().toISOString(),
+          }),
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          console.error("Error guardando examen:", err);
+          alert("Error al guardar el examen: " + (err.detail || "Error desconocido"));
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Si es el último, redirigir a módulos; si no, continuar al siguiente
+      const isLastSubmodule = allSubmodules && allSubmodules.length > 0 && 
+        currentSubmodule?.posicion === Math.max(...allSubmodules.map(s => s.posicion));
+      
+      if (isLastSubmodule) {
+        window.location.href = "/modulos";
+      } else {
+        if (allSubmodules && currentSubmodule) {
+          const currentIndex = allSubmodules.findIndex(s => s.id === currentSubmodule.id);
+          if (currentIndex >= 0 && currentIndex < allSubmodules.length - 1) {
+            const nextSubmodule = allSubmodules[currentIndex + 1];
+            onNavigate?.(nextSubmodule.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error al calificar:", error);
+      alert("Error de conexión: " + (error instanceof Error ? error.message : "Error desconocido"));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -65,16 +239,11 @@ export const ContentBox = ({ contenidos }: { contenidos: ContentBoxProps[] }) =>
         })}
 
         <ContentActions
-          apiUrl={API_URL}
-          onContinue={() => console.log("Continuar acción para")}
-          onFinish={() => console.log("Finalizar acción para")}
-          onGrade={(password, ok) => {
-            if (ok) {
-              console.log("Contraseña válida. Proceder a calificar.", password);
-            } else {
-              console.log("Contraseña inválida o error.", password);
-            }
-          }}
+          actionType={getActionType() ?? "continuar"}
+          onContinue={handleContinue}
+          onFinish={handleFinish}
+          onGrade={handleGrade}
+          isBlocked={false}
         />
       </div>
     </div>

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from controllers import controllers
 from models.schemas import AvancePersonaCreate, AvancePersonaUpdate
-from controllers.controllers import get_db
+from controllers.db_dependency import get_db
 
 routerAvances = APIRouter(tags=["Avances"], prefix="")
 
