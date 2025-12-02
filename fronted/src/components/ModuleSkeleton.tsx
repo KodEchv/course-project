@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { ChevronUp, ChevronDown, Trash2, ChevronRight } from "lucide-react"
 import { ConfirmDeleteModal } from "./ConfirmDeleteModal"
+import { getApiUrl } from "../config/api"
 
 interface Content {
     ID_Contenido: number
@@ -29,14 +30,14 @@ interface Modulo {
     submodulos: Submodulo[]
 }
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = getApiUrl();
 
 export const ModuleSkeleton = ({isUpdated}: {isUpdated: boolean}) => {
     const [modulos, setModulos] = useState<Modulo[]>([])
 
-    useEffect(() => {
-        isUpdated=false;
-        const fetchData = async () => {
+    // Función para refrescar los datos
+    const fetchData = async () => {
+        try {
             const modulosData: Modulo[] = await fetch(`${API_URL}/modulos`).then(res => res.json())
             const subModulosData: Submodulo[] = await fetch(`${API_URL}/submodulos`).then(res => res.json())
             const contenidosData: Content[] = await fetch(`${API_URL}/contenidos`).then(res => res.json())
@@ -55,9 +56,13 @@ export const ModuleSkeleton = ({isUpdated}: {isUpdated: boolean}) => {
             }))
 
             console.log(estructura)
-
             setModulos(estructura)
+        } catch (error) {
+            console.error("Error al cargar datos:", error);
         }
+    };
+
+    useEffect(() => {
         fetchData()
     }, [isUpdated])
 
@@ -85,95 +90,185 @@ export const ModuleSkeleton = ({isUpdated}: {isUpdated: boolean}) => {
         setShowModal(true)
     }
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!deleteTarget) return
         const { tipo, id } = deleteTarget
 
-        setModulos(prev => {
-            let updated = [...prev]
-
+        try {
+            // Llamar al backend para eliminar
+            let endpoint = "";
             if (tipo === "modulo") {
-                updated = updated.filter(m => m.ID_modulo !== id)
+                endpoint = `/modulos/${id}`;
             } else if (tipo === "submodulo") {
-                updated = updated.map(m => ({
-                    ...m,
-                    submodulos: m.submodulos.filter(s => s.ID_SubModulo !== id)
-                }))
+                endpoint = `/submodulos/${id}`;
             } else if (tipo === "contenido") {
-                updated = updated.map(m => ({
-                    ...m,
-                    submodulos: m.submodulos.map(s => ({
-                        ...s,
-                        contenidos: s.contenidos.filter(c => c.ID_Contenido !== id)
-                    }))
-                }))
+                endpoint = `/contenidos/${id}`;
             }
 
-            return updated
-        })
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                method: "DELETE",
+            });
+
+            if (response.ok) {
+                // Si el backend respondió bien, refrescar los datos
+                await fetchData();
+            } else {
+                alert(`Error al eliminar ${tipo}`);
+            }
+        } catch (error) {
+            console.error("Error al eliminar:", error);
+            alert(`Error al eliminar ${tipo}`);
+        }
 
         setShowModal(false)
         setDeleteTarget(null)
     }
 
     // Reordenamiento
-    const handleMove = (
+    const handleMove = async (
         tipo: "modulo" | "submodulo" | "contenido",
         parentId: number | null,
         id: number,
         direction: "up" | "down"
     ) => {
-        setModulos(prev => {
-            const updated = [...prev]
+        // Primero, calcular la nueva posición SIN actualizar el estado
+        let newPosicion = 0;
+        let found = false;
 
-            const moveItem = <T extends { Posicion: number }>(
+        // Función auxiliar para encontrar la nueva posición
+        const findNewPosition = () => {
+            if (tipo === "modulo") {
+                const sortedModulos = [...modulos].sort((a, b) => a.Posicion - b.Posicion);
+                const itemIdx = sortedModulos.findIndex(m => m.ID_modulo === id);
+                if (itemIdx === -1) return;
+                const newIdx = direction === "up" ? itemIdx - 1 : itemIdx + 1;
+                if (newIdx >= 0 && newIdx < sortedModulos.length) {
+                    newPosicion = newIdx;
+                    found = true;
+                }
+            } else if (tipo === "submodulo") {
+                const modul = modulos.find(m => m.ID_modulo === parentId);
+                if (!modul) return;
+                const sortedSubs = [...modul.submodulos].sort((a, b) => a.Posicion - b.Posicion);
+                const itemIdx = sortedSubs.findIndex(s => s.ID_SubModulo === id);
+                if (itemIdx === -1) return;
+                const newIdx = direction === "up" ? itemIdx - 1 : itemIdx + 1;
+                if (newIdx >= 0 && newIdx < sortedSubs.length) {
+                    newPosicion = newIdx;
+                    found = true;
+                }
+            } else if (tipo === "contenido") {
+                for (const mod of modulos) {
+                    for (const sub of mod.submodulos) {
+                        if (sub.ID_SubModulo === parentId) {
+                            const sortedCons = [...sub.contenidos].sort((a, b) => a.Posicion - b.Posicion);
+                            const itemIdx = sortedCons.findIndex(c => c.ID_Contenido === id);
+                            if (itemIdx === -1) return;
+                            const newIdx = direction === "up" ? itemIdx - 1 : itemIdx + 1;
+                            if (newIdx >= 0 && newIdx < sortedCons.length) {
+                                newPosicion = newIdx;
+                                found = true;
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        };
+
+        findNewPosition();
+
+        if (!found) return;
+
+        // Ahora actualizar el estado localmente
+        setModulos(prev => {
+            const updated = [...prev];
+
+            const moveItem = <T extends { Posicion: number; [key: string]: any }>(
                 arr: T[],
                 id: number,
                 dir: "up" | "down"
-            ) => {
-                const idx = arr.findIndex(item => item.Posicion === arr.find(c => (c as any).ID_Contenido === id)?.Posicion)
-
+            ): T[] => {
                 const itemIdx = arr.findIndex(item =>
                     (item as any).ID_Modulo === id ||
                     (item as any).ID_SubModulo === id ||
                     (item as any).ID_Contenido === id
-                )
+                );
 
-                if (itemIdx === -1) return arr
+                if (itemIdx === -1) return arr;
 
-                const newIdx = direction === "up" ? itemIdx - 1 : itemIdx + 1
-                if (newIdx < 0 || newIdx >= arr.length) return arr
+                const newIdx = dir === "up" ? itemIdx - 1 : itemIdx + 1;
+                if (newIdx < 0 || newIdx >= arr.length) return arr;
 
-                const newArr = [...arr]
-                ;[newArr[itemIdx], newArr[newIdx]] = [newArr[newIdx], newArr[itemIdx]]
+                const newArr = [...arr];
+                [newArr[itemIdx], newArr[newIdx]] = [newArr[newIdx], newArr[itemIdx]];
 
-                return newArr.map((item, i) => ({ ...item, posicion: i }))
-            }
+                return newArr.map((item, i) => ({
+                    ...item,
+                    Posicion: i
+                }));
+            };
 
             // Modulos
             if (tipo === "modulo") {
-                return moveItem(updated, id, direction)
+                updated.sort((a, b) => a.Posicion - b.Posicion);
+                return moveItem(updated, id, direction);
             }
 
+            // Submodulos o Contenidos
             return updated.map(mod => {
-                // Submodulos
                 if (tipo === "submodulo" && mod.ID_modulo === parentId) {
-                    mod.submodulos = moveItem(mod.submodulos, id, direction)
+                    mod.submodulos.sort((a, b) => a.Posicion - b.Posicion);
+                    mod.submodulos = moveItem(mod.submodulos, id, direction);
                 }
 
-                // Contenidos
                 if (tipo === "contenido") {
                     mod.submodulos = mod.submodulos.map(sub => {
                         if (sub.ID_SubModulo === parentId) {
-                            sub.contenidos = moveItem(sub.contenidos, id, direction)
+                            sub.contenidos.sort((a, b) => a.Posicion - b.Posicion);
+                            sub.contenidos = moveItem(sub.contenidos, id, direction);
                         }
-                        return sub
-                    })
+                        return sub;
+                    });
                 }
 
-                return mod
-            })
-        })
+                return mod;
+            });
+        });
+
+        // Llamar al backend para actualizar la posición
+        try {
+            let endpoint = "";
+            if (tipo === "modulo") {
+                endpoint = `/modulos/${id}`;
+            } else if (tipo === "submodulo") {
+                endpoint = `/submodulos/${id}`;
+            } else if (tipo === "contenido") {
+                endpoint = `/contenidos/${id}`;
+            }
+
+            console.log(`Updating ${tipo} ${id} with position ${newPosicion}`);
+
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ Posicion: newPosicion }),
+            });
+
+            if (!response.ok) {
+                console.error(`Error al actualizar posición en backend: ${response.status}`);
+                const errorText = await response.text();
+                console.error("Error details:", errorText);
+            } else {
+                console.log("Posición actualizada exitosamente");
+                // Refrescar los datos después de actualizar
+                await fetchData();
+            }
+        } catch (error) {
+            console.error("Error al mover item:", error);
+        }
     }
 
     return (
