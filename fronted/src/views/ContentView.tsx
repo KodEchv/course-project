@@ -151,15 +151,6 @@ export const ContentView = () => {
     }
   };
 
-  // Si el submodule es undefined o no existe, mostrar alert y redirigir
-  useEffect(() => {
-    if (selectedSubmodule === "undefined" || (selectedModule && submodules.length === 0 && selectedSubmodule !== null)) {
-      alert("Este módulo no cuenta con submódulos");
-      // redirigir usando la URL local (origin) hacia /modulos
-      window.location.href = `${import.meta.env.VITE_DOMININIO}/modulos`;
-    }
-  }, [selectedSubmodule, selectedModule, submodules, navigate]);
-
   return (
     <div className="w-full h-full flex flex-col p-4">
       <ContentHeader modulo={titulo || "Título del Módulo"} />
