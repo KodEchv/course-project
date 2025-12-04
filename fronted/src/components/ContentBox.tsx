@@ -37,7 +37,6 @@ export const ContentBox = ({
   onNavigate?: (nextSubmoduleId: string) => void;
 }) => {
   const [contenidosOrdenados, setContenidosOrdenados] = useState<ContentBoxProps[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!contenidos) return;
@@ -69,7 +68,6 @@ export const ContentBox = ({
   };
 
   const handleContinue = async () => {
-    setLoading(true);
     try {
       // Guardar avance completado
       if (userId && currentSubmodule && moduleId) {
@@ -89,7 +87,6 @@ export const ContentBox = ({
           const err = await response.json();
           console.error("Error guardando avance:", err);
           alert("Error al guardar el avance: " + (err.detail || "Error desconocido"));
-          setLoading(false);
           return;
         }
       }
@@ -105,13 +102,10 @@ export const ContentBox = ({
     } catch (error) {
       console.error("Error al continuar:", error);
       alert("Error de conexión: " + (error instanceof Error ? error.message : "Error desconocido"));
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
   const handleFinish = async () => {
-    setLoading(true);
     try {
       // Guardar avance completado
       if (userId && currentSubmodule && moduleId) {
@@ -131,7 +125,6 @@ export const ContentBox = ({
           const err = await response.json();
           console.error("Error guardando avance:", err);
           alert("Error al guardar el avance: " + (err.detail || "Error desconocido"));
-          setLoading(false);
           return;
         }
       }
@@ -142,7 +135,6 @@ export const ContentBox = ({
       console.error("Error al finalizar:", error);
       alert("Error de conexión: " + (error instanceof Error ? error.message : "Error desconocido"));
     } finally {
-      setLoading(false);
     }
   };
 
@@ -152,7 +144,6 @@ export const ContentBox = ({
       return;
     }
 
-    setLoading(true);
     try {
       // Guardar examen como completado
       if (userId && currentSubmodule && moduleId) {
@@ -172,7 +163,6 @@ export const ContentBox = ({
           const err = await response.json();
           console.error("Error guardando examen:", err);
           alert("Error al guardar el examen: " + (err.detail || "Error desconocido"));
-          setLoading(false);
           return;
         }
       }
@@ -195,8 +185,6 @@ export const ContentBox = ({
     } catch (error) {
       console.error("Error al calificar:", error);
       alert("Error de conexión: " + (error instanceof Error ? error.message : "Error desconocido"));
-    } finally {
-      setLoading(false);
     }
   };
 
