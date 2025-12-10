@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 // Rutas que requieren ser admin
 const ADMIN_ROUTES = ["/configuracion", "/dashboard", "/estudiante", "/listado-estudiantes"];
 // Rutas que requieren ser estudiante/usuario
-const STUDENT_ROUTES = ["/modulos", "/progreso", "/contenido"];
+const STUDENT_ROUTES = ["/modulos", "/progreso", "/contenido", "/estudiante"];
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const userStr = localStorage.getItem("user");
