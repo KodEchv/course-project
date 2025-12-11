@@ -25,10 +25,44 @@ export const Login = () => {
             .catch(() => setUsuarios([]));
     }, [success]);
 
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setPendingDeleteId(id);
+        setShowPasswordModal(true);
+        setPasswordInput('');
+    }
+
+    const confirmDelete = () => {
+        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+        
+        if (passwordInput !== adminPassword) {
+            alert('Contraseña incorrecta');
+            setPasswordInput('');
+            return;
+        }
+        
+        if (pendingDeleteId) {
+            deleteUser(pendingDeleteId)
+                .then(() => {
+                    setSuccess('Usuario eliminado correctamente');
+                    setShowPasswordModal(false);
+                    setPendingDeleteId(null);
+                    setPasswordInput('');
+                })
+                .catch(() => {
+                    alert('Error al eliminar el usuario');
+                    setShowPasswordModal(false);
+                    setPendingDeleteId(null);
+                    setPasswordInput('');
+                });
+        }
+    }
+
     const handleDeleteUser = (id: string) => {
-        deleteUser(id)
-            .then(() => setSuccess('Usuario eliminado correctamente'))
-            .catch(() => setSuccess('Error al eliminar el usuario'));
+        handleDeleteClick(id);
     }
 
     // El formulario ahora está en UserForm
@@ -78,6 +112,43 @@ export const Login = () => {
                         createPersona={createPersona}
                         createUsuario={createUsuario}
                     />
+                </div>
+            )}
+            {showPasswordModal && (
+                <div className="fixed inset-0 flex items-center justify-center bg-[#0D1B2A] bg-opacity-40 z-50">
+                    <div className="bg-[#D9D9D9] p-6 rounded-2xl shadow-lg flex flex-col gap-4 min-w-[300px] border border-gray-200">
+                        <h3 className="font-bold text-lg">Confirmar eliminación</h3>
+                        <p className="text-sm">Ingresa la contraseña de admin para eliminar este usuario:</p>
+                        <input 
+                            type="password"
+                            placeholder="Contraseña"
+                            value={passwordInput}
+                            onChange={(e) => setPasswordInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && confirmDelete()}
+                            className="border border-[#2e2e2e] rounded-xl px-3 py-2"
+                            autoFocus
+                        />
+                        <div className="flex gap-2 justify-end">
+                            <button 
+                                type="button" 
+                                className="px-3 py-1 rounded-xl bg-gray-300"
+                                onClick={() => {
+                                    setShowPasswordModal(false);
+                                    setPasswordInput('');
+                                    setPendingDeleteId(null);
+                                }}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="button" 
+                                className="px-3 py-1 rounded-xl bg-red-600 text-white"
+                                onClick={confirmDelete}
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
